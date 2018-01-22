@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using System;
+using System.Net.Http;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -9,8 +11,11 @@ namespace MyApiServer
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        private readonly JwtBearerSettings bearerSettings;
+
+        public Startup(IConfiguration configuration, JwtBearerSettings bearerSettings = null)
         {
+            this.bearerSettings = bearerSettings;
             Configuration = configuration;
         }
 
@@ -43,11 +48,23 @@ namespace MyApiServer
             options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
         }
 
-        private static void GetJwtBearerOptions(JwtBearerOptions options)
+        private void GetJwtBearerOptions(JwtBearerOptions options)
         {
-            options.Authority = "http://localhost:5000";
-            options.Audience = "http://localhost:5000/resources";
-            options.RequireHttpsMetadata = false;
+            if (bearerSettings?.Action == null)
+            {
+                options.Authority = "http://localhost:5000";
+                options.Audience = "http://localhost:5000/resources";
+                options.RequireHttpsMetadata = false;
+            }
+            else
+            {
+                bearerSettings.Action(options);
+            }
         }
+    }
+
+    public class JwtBearerSettings
+    {
+        public Action<JwtBearerOptions> Action { get; set; }
     }
 }
